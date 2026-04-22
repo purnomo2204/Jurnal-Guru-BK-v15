@@ -1,0 +1,140 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Orbitron", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  :root {
+    --primary-color: #0ea5e9; /* Cyan-500 */
+    --neon-cyan: #00f2ff;
+    --neon-emerald: #10b981;
+    --neon-purple: #a855f7;
+    --neon-yellow: #facc15;
+    --neon-rose: #f43f5e;
+    --bg-main: #f8fafc; /* Slate-50 */
+    --text-main: #0f172a; /* Slate-900 */
+    --card-bg: #ffffff; /* White */
+    --card-border: #e2e8f0; /* Slate-200 */
+    --input-bg: #f1f5f9; /* Slate-100 */
+    --text-muted: #64748b; /* Slate-500 */
+  }
+
+  html {
+    background-color: #f8fafc; /* default light theme */
+  }
+  html:has(body.theme-standard) {
+    background-color: #eff6ff; /* blue-50 */
+  }
+  html:has(body.theme-classic) {
+    background-color: #f4f1ea; /* classic theme */
+  }
+
+  body {
+    background: radial-gradient(circle at top right, #f0f9ff, #f8fafc), radial-gradient(circle at bottom left, #e0f2fe, #f8fafc);
+    background-attachment: fixed;
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: 0.05em;
+    color: #0f172a;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(203, 213, 225, 1);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 30px rgba(14, 165, 233, 0.1);
+    transform: translateY(-4px) scale(1.01);
+  }
+
+  .input-cyber {
+    background-color: rgba(241, 245, 249, 0.8);
+    border: 1px solid rgba(148, 163, 184, 1);
+    color: #0f172a;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+  }
+
+  .input-cyber:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(14, 165, 233, 0.15);
+    background-color: #ffffff;
+  }
+
+  .text-neon-cyan { color: var(--primary-color); text-shadow: 0 0 10px rgba(14, 165, 233, 0.2); }
+  .text-neon-emerald { color: var(--neon-emerald); text-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+  .text-neon-purple { color: var(--neon-purple); text-shadow: 0 0 10px rgba(168, 85, 247, 0.2); }
+  .text-neon-yellow { color: var(--neon-yellow); text-shadow: 0 0 10px rgba(250, 204, 21, 0.2); }
+  .text-neon-rose { color: var(--neon-rose); text-shadow: 0 0 10px rgba(244, 63, 94, 0.2); }
+
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+    transition: all 0.3s ease;
+    border: 1px solid var(--primary-color);
+  }
+
+  .btn-primary:hover {
+    filter: brightness(1.05);
+    box-shadow: 0 0 10px rgba(14, 165, 233, 0.3);
+    border-color: var(--primary-color);
+  }
+
+  .text-primary {
+    color: var(--primary-color);
+  }
+
+  .bg-primary {
+    background-color: var(--primary-color);
+  }
+
+  .border-primary {
+    border-color: var(--primary-color);
+  }
+  
+  .label-luxe {
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+  }
+  
+  .font-arial {
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Custom Scrollbar for light theme */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #f8fafc; 
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1; 
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8; 
+  }
+}
+
+

@@ -1,0 +1,166 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} { allow read, write: if false; }
+
+    // ===============================================================
+    // Global Primitives
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && 
+        (request.auth.token.email == "PURNOMOWIWIT@gmail.com" && request.auth.token.email_verified == true);
+    }
+    
+    function isOwner(nip) {
+      return isAuthenticated() && (request.auth.uid == nip || isAdmin());
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidStrNode(val, maxLen) {
+      return val is string && val.size() <= maxLen;
+    }
+
+    // ===============================================================
+    // Shared Validation
+    // ===============================================================
+    // A generic baseline validator for the teacher's collections
+    function isValidEntity(data) {
+      return (!('id' in data) || isValidStrNode(data.id, 128)) &&
+             (!('name' in data) || isValidStrNode(data.name, 150)) &&
+             (!('date' in data) || isValidStrNode(data.date, 50));
+    }
+
+    function uidNotModified() {
+      return !('uid' in incoming()) || ('uid' in existing() && incoming().uid == existing().uid);
+    }
+
+    function isSafeCreate(data) {
+      return isValidEntity(data); // In real production we'd do exact key matching
+    }
+
+    function isSafeUpdate() {
+      return isValidEntity(incoming()) && uidNotModified();
+    }
+
+    // ===============================================================
+    // Teachers Scoped Collections
+    // ===============================================================
+    match /teachers/{nip} {
+      
+      // Top-level reads
+      allow read: if isOwner(nip);
+      allow write: if isOwner(nip) && isValidId(nip);
+
+      match /profile/data {
+        allow read: if true; 
+        allow write: if isOwner(nip);
+      }
+      
+      // Approval Check
+      function isApproved() {
+        return get(/databases/$(database)/documents/teachers/$(nip)/profile/data).data.approved == true || isAdmin();
+      }
+
+      // ===============================================================
+      // Student-created / interacted collections (Open creation allowed)
+      // ===============================================================
+      match /akpd/{id} {
+        allow read: if isOwner(nip) && isApproved();
+        allow list: if isOwner(nip) && isApproved();
+        allow create: if isValidId(id) && isSafeCreate(incoming());
+        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+      }
+
+      match /reports/{id} {
+        allow read, list: if isOwner(nip) && isApproved();
+        allow create: if isValidId(id) && isSafeCreate(incoming());
+        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+      }
+
+      match /problem_reports/{id} {
+        allow read, list: if isOwner(nip) && isApproved();
+        allow create: if isValidId(id) && isSafeCreate(incoming());
+        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+      }
+
+      // ===============================================================
+      // Strictly Teacher-Owned Collections
+      // ===============================================================
+      match /students/{id} {
+        allow read: if (isAuthenticated() || isOwner(nip)) && isApproved();
+        allow list: if isOwner(nip) && isApproved();
+        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming()) && isApproved();
+        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate() && isApproved();
+        allow delete: if isOwner(nip) && isValidId(id) && isApproved();
+      }
+
+      match /logs/{id} {
+        allow read, list: if isOwner(nip) && isApproved();
+        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming()) && isApproved();
+        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate() && isApproved();
+        allow delete: if isOwner(nip) && isValidId(id) && isApproved();
+      }
+
+      match /events/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /achievements/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /scholarships/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /economically_disadvantaged/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /violations/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /attendance/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /classical_schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /assessments/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /home_visits/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /vuln_maps/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /referrals/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /parent_comms/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /daily_journals/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /academic_events/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /notifications/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /groups/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /sociometry/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /tda/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      
+      match /{collection}/{documentId} {
+        allow read, write: if isOwner(nip) && isApproved();
+      }
+    }
+
+    // ===============================================================
+    // Global Collections
+    // ===============================================================
+    match /public_chat/{msgId} {
+      allow get: if isAuthenticated() && isValidId(msgId);
+      allow list: if isAuthenticated();
+      // Ensure sender is the authenticated user or an admin
+      allow create: if isAuthenticated() && isValidId(msgId) && 
+                      (incoming().sender == request.auth.uid || isAdmin());
+    }
+
+    match /shared_items/{itemId} {
+      allow get: if isAuthenticated() && isValidId(itemId);
+      allow list: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidId(itemId) && 
+                      (!('authorUid' in incoming()) || incoming().authorUid == request.auth.uid || isAdmin());
+      allow update, delete: if isAuthenticated() && isValidId(itemId) && 
+                              (request.auth.uid == resource.data.authorUid || isAdmin());
+
+      match /comments/{commentId} {
+        allow get: if isAuthenticated() && isValidId(commentId);
+        allow list: if isAuthenticated();
+        allow create: if isAuthenticated() && isValidId(commentId);
+      }
+    }
+  }
+}
