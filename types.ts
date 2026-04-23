@@ -59,6 +59,8 @@ export interface TeacherData {
   googleFormUrl?: string;
   subjects?: SubjectDefinition[];
   certifications?: Certification[];
+  expiryDate?: string; // DD:MM:YY
+  isAppActive?: boolean;
 }
 
 export interface FirebaseConfig {

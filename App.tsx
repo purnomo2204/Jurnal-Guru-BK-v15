@@ -62,6 +62,7 @@ import IceBreaking from './components/IceBreaking';
 import SopManagement from './components/SopManagement';
 import KodeEtik from './components/KodeEtik';
 import AsasBK from './components/AsasBK';
+import ExpiredScreen from './components/ExpiredScreen';
 
 import { db, auth } from './src/lib/firebase';
 import firebaseAppletConfig from './firebase-applet-config.json';
@@ -696,6 +697,16 @@ const App: React.FC = () => {
     phone: '',
     schoolPassword: '@Dutatama220469'
   }));
+
+  const isExpired = useMemo(() => {
+     if (teacherData.isAppActive) return false;
+     if (!teacherData.expiryDate) return false;
+     const parts = teacherData.expiryDate.split(':');
+     if (parts.length !== 3) return false;
+     const expiry = new Date(2000 + parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+     expiry.setHours(23, 59, 59, 999);
+     return new Date() > expiry;
+  }, [teacherData]);
 
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -3314,6 +3325,14 @@ const App: React.FC = () => {
           )}
         </div>
       )}
+      {isExpired && <ExpiredScreen onReactivate={(pw) => {
+          if (pw === '@Dutatama123') {
+              const newData = { ...teacherData, isAppActive: true, expiryDate: '' };
+              setTeacherData(newData);
+              localStorage.setItem('guru_bk_teacher_data', JSON.stringify(newData));
+              window.location.reload();
+          }
+      }} />}
       <Routes>
           <Route path="/welcome" element={<WelcomeScreen onEnter={() => { setView(ViewMode.HOME); window.location.hash = '/dashboard'; }} teacherData={teacherData} onOpenGuide={() => setShowGuide(true)} />} />
           <Route path="/kotak-masalah-siswa" element={

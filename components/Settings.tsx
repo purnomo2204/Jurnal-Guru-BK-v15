@@ -12,7 +12,7 @@ import {
   ChevronRight, ChevronUp, ChevronDown, Terminal, Globe, Link, Unlink, Cloud, Loader2,
   Unlock, ShieldAlert, BookOpen, Code, Layers, FileText, Calendar as CalendarIcon,
   Building2, School, CheckCircle2, Network, Palette, Type, Sun, AppWindow, Coffee,
-  Monitor, Apple, CheckCircle, Bell, Award
+  Monitor, Apple, CheckCircle, Bell, Award, Shield
 } from 'lucide-react';
 
 import { toast } from 'sonner';
@@ -22,6 +22,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { NotificationCreator } from './NotificationCreator';
 import TeacherProfile from './TeacherProfile';
+import LicenseSettings from './LicenseSettings';
 // ... existing imports ...
 interface SettingsProps {
   spreadsheetUrl: string;
@@ -66,7 +67,7 @@ const Settings: React.FC<SettingsProps> = ({
   const [copied, setCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [showCloudGuide, setShowCloudGuide] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'report' | 'subjects' | 'cloud' | 'backup' | 'firebase' | 'appearance' | 'notifications'>(initialTab as any);
+  const [activeTab, setActiveTab] = useState<'profile' | 'report' | 'subjects' | 'cloud' | 'backup' | 'firebase' | 'appearance' | 'notifications' | 'license'>(initialTab as any);
   const [teacherForm, setTeacherForm] = useState<TeacherData>(teacherData);
   const [fbForm, setFbForm] = useState<FirebaseConfig>(firebaseConfig || { apiKey: '', projectId: '', appId: '', firestoreDatabaseId: '' });
 
@@ -395,6 +396,9 @@ function doGet(e) {
         </button>
         <button onClick={() => setActiveTab('appearance')} className={`flex items-center gap-2 px-4 py-2 rounded-[0.75rem] font-bold text-[9px] uppercase tracking-[0.2em] transition-all duration-500 border ${activeTab === 'appearance' ? 'bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-md border-slate-200' : 'text-slate-500 hover:text-slate-600 border-blue-500 hover:border-slate-200'}`}>
           <Palette className="w-3 h-3" /> Tampilan
+        </button>
+        <button onClick={() => setActiveTab('license')} className={`flex items-center gap-2 px-4 py-2 rounded-[0.75rem] font-bold text-[9px] uppercase tracking-[0.2em] transition-all duration-500 border ${activeTab === 'license' ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow-md border-slate-200' : 'text-slate-500 hover:text-slate-600 border-blue-500 hover:border-slate-200'}`}>
+          <Shield className="w-3 h-3" /> Lisensi
         </button>
         <button onClick={() => setActiveTab('firebase')} className={`flex items-center gap-2 px-4 py-2 rounded-[0.75rem] font-bold text-[9px] uppercase tracking-[0.2em] transition-all duration-500 border ${activeTab === 'firebase' ? 'bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-md border-slate-200' : 'text-slate-500 hover:text-slate-600 border-blue-500 hover:border-slate-200'}`}>
           <Flame className="w-3 h-3" /> Kolaborasi
@@ -1645,6 +1649,10 @@ function doGet(e) {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'license' && (
+           <LicenseSettings teacherData={teacherForm} onUpdateTeacherData={setTeacherForm} />
         )}
       </div>
       {showPassModal && (

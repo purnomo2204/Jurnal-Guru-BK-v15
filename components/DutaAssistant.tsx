@@ -49,7 +49,10 @@ const DutaAssistant: React.FC<DutaAssistantProps> = ({ studentsCount }) => {
         Gunakan bahasa Indonesia yang santun, empatik, dan mudah dipahami.
       `;
 
-      const response = await ai.models.generateContent({
+      // Add an empty assistant message to append the stream to
+      setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
+
+      const stream = await ai.models.generateContentStream({
         model: model,
         contents: [...messages, { role: 'user', content: userMessage }].map(m => ({
           role: m.role === 'user' ? 'user' : 'model',
@@ -60,10 +63,17 @@ const DutaAssistant: React.FC<DutaAssistantProps> = ({ studentsCount }) => {
         }
       });
 
-      setMessages(prev => [...prev, { role: 'assistant', content: response.text || "Maaf, saya tidak mengerti." }]);
+      for await (const chunk of stream) {
+        const chunkText = chunk.text || "";
+        setMessages(prev => {
+          const newMessages = [...prev];
+          newMessages[newMessages.length - 1].content += chunkText;
+          return newMessages;
+        });
+      }
     } catch (error) {
       console.error("Error calling Gemini AI:", error);
-      setMessages(prev => [...prev, { role: 'assistant', content: "Maaf, terjadi kesalahan saat menghubungi server." }]);
+      setMessages(prev => [...prev.slice(0, -1), { role: 'assistant', content: "Maaf, terjadi kesalahan saat menghubungi server." }]);
     } finally {
       setIsLoading(false);
     }
