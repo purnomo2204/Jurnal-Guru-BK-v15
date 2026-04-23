@@ -397,7 +397,7 @@ const AutomatedReports: React.FC<AutomatedReportsProps> = ({
               <select 
                 value={selectedStudentId} 
                 onChange={e => setSelectedStudentId(e.target.value)}
-                className="w-full p-2 text-[10px] font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                className="w-full p-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
               >
                 <option value="">-- Pilih Siswa --</option>
                 {students.map(s => <option key={s.id} value={s.id}>{s.name} ({s.className})</option>)}
@@ -430,7 +430,7 @@ const AutomatedReports: React.FC<AutomatedReportsProps> = ({
                 type="week" 
                 value={selectedWeek}
                 onChange={e => setSelectedWeek(e.target.value)}
-                className="w-full p-2 text-[10px] font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                className="w-full p-2 text-xs font-bold text-slate-900 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
               />
             </div>
             <button 
@@ -454,7 +454,7 @@ const AutomatedReports: React.FC<AutomatedReportsProps> = ({
             </div>
           </div>
           <div className="space-y-3">
-            <p className="text-slate-600 text-[10px] leading-relaxed">
+            <p className="text-slate-600 text-xs leading-relaxed">
               Gunakan fitur ini untuk mencetak daftar siswa asuh per kelas atau seluruh kelas sekaligus dalam format surat resmi yang dilengkapi dengan Kop Surat dan tanda tangan.
             </p>
             <button 

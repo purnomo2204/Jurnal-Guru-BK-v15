@@ -5,7 +5,7 @@ import { formatAcademicTitle } from '../src/lib/nameFormatter';
 import { 
   Copy, Check, Save, ArrowLeft, ExternalLink, 
   UserCircle, HardDrive, Download, Upload, 
-  Wifi, Lock, X, LogOut,
+  Wifi, Lock, X, 
   RefreshCw, HelpCircle, PlayCircle, RotateCcw,
   Database, User, Activity, AlertCircle, WifiOff, Flame, Trash2,
   Info, Eye, EyeOff, KeyRound, ShieldCheck, ImageIcon,
@@ -52,7 +52,6 @@ interface SettingsProps {
   isOffline?: boolean;
   db: Firestore | null;
   auth: Auth | null;
-  onLogout?: () => void;
 }
 
 const Settings: React.FC<SettingsProps> = ({ 
@@ -60,7 +59,7 @@ const Settings: React.FC<SettingsProps> = ({
   initialTab = 'profile', firebaseConfig, onSaveFirebase, appearance, onUpdateAppearance, showNotification,
   onResetData, onSyncCloud, onSyncAllStudents, onDownloadFromCloud, 
   syncQueue = [], onProcessSyncQueue, onClearSyncQueue, isOffline = false,
-  db, auth, onLogout
+  db, auth
 }) => {
   const [url, setUrl] = useState(spreadsheetUrl);
   const [gfUrl, setGfUrl] = useState(googleFormUrl);
@@ -90,14 +89,9 @@ const Settings: React.FC<SettingsProps> = ({
     const newErrors: Record<string, string> = {};
     
     if (!validateRequired(teacherForm.name)) newErrors.name = "Nama lengkap wajib diisi";
-    if (!validateRequired(teacherForm.nip)) newErrors.nip = "NIP wajib diisi";
     if (teacherForm.nip && !validateNumeric(teacherForm.nip)) newErrors.nip = "NIP harus berupa angka";
     
     if (!validateRequired(teacherForm.school)) newErrors.school = "Nama instansi wajib diisi";
-    if (!validateRequired(teacherForm.schoolAddress)) newErrors.schoolAddress = "Alamat instansi wajib diisi";
-    
-    if (!validateRequired(teacherForm.principalName)) newErrors.principalName = "Nama kepala sekolah wajib diisi";
-    if (!validateRequired(teacherForm.principalNip)) newErrors.principalNip = "NIP kepala sekolah wajib diisi";
     if (teacherForm.principalNip && !validateNumeric(teacherForm.principalNip)) newErrors.principalNip = "NIP harus berupa angka";
 
     setErrors(newErrors);
@@ -604,7 +598,7 @@ function doGet(e) {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">NIP / ID Pegawai</label>
+                    <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">NIP / ID Pegawai <span className="text-[6px] font-normal italic">(Opsional)</span></label>
                     <input 
                       value={teacherForm.nip} 
                       onChange={e => {
@@ -618,7 +612,7 @@ function doGet(e) {
 
                   <div className="space-y-1 text-left">
                     <div className="flex items-center gap-1">
-                      <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Nomor WA/HP Guru BK</label>
+                      <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Nomor WA/HP Guru BK <span className="text-[6px] font-normal italic">(Opsional)</span></label>
                     </div>
                     <input 
                       placeholder="Contoh: 081234567890"
@@ -635,7 +629,7 @@ function doGet(e) {
                   </div>
 
                   <div className="md:col-span-2 space-y-1">
-                    <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Alamat Sekolah</label>
+                    <label className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Alamat Sekolah <span className="text-[6px] font-normal italic">(Opsional)</span></label>
                     <textarea 
                       value={teacherForm.schoolAddress} 
                       onChange={e => {
@@ -661,15 +655,8 @@ function doGet(e) {
                 </div>
               </div>
             </div>
-            <div className="relative space-y-3">
-              <button onClick={handleSaveTeacherData} className="w-full bg-blue-600 hover:bg-blue-500 py-3 rounded-xl font-black uppercase tracking-[0.2em] shadow-xl transition-all text-white text-[10px]">Simpan Seluruh Perubahan</button>
-              
-              {onLogout && (
-                <button onClick={onLogout} className="w-full bg-rose-600 hover:bg-rose-500 py-3 rounded-xl font-black uppercase tracking-[0.2em] shadow-xl transition-all text-white text-[10px] flex items-center justify-center gap-2">
-                  <LogOut className="w-4 h-4" /> Keluar dari Akun Cloud
-                </button>
-              )}
-
+            <div className="relative">
+              <button onClick={handleSaveTeacherData} className="w-full bg-blue-600 hover:bg-blue-500 py-2 rounded-xl font-black uppercase tracking-[0.2em] shadow-xl transition-all text-white text-[8px]">Simpan Seluruh Perubahan</button>
               {showSaveNotification && (
                 <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-emerald-500/90 text-white text-[7px] font-bold px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1 animate-fade-in whitespace-nowrap">
                   <CheckCircle className="w-2.5 h-2.5" /> Data tersimpan
@@ -710,7 +697,7 @@ function doGet(e) {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nama Kepala Sekolah</label>
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Nama Kepala Sekolah <span className="text-[7px] font-normal italic">(Opsional)</span></label>
                 <input 
                   value={teacherForm.principalName || ''} 
                   onChange={e => {
@@ -722,7 +709,7 @@ function doGet(e) {
                 {errors.principalName && <p className="text-[7px] text-rose-500 font-bold">{errors.principalName}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">NIP Kepala Sekolah</label>
+                <label className="text-[8px] font-black text-slate-500 uppercase tracking-widest">NIP Kepala Sekolah <span className="text-[7px] font-normal italic">(Opsional)</span></label>
                 <input 
                   value={teacherForm.principalNip || ''} 
                   onChange={e => {

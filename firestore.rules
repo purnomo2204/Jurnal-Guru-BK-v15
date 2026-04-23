@@ -66,74 +66,72 @@ service cloud.firestore {
         allow read: if true; 
         allow write: if isOwner(nip);
       }
-      
-      // Approval Check
-      function isApproved() {
-        return get(/databases/$(database)/documents/teachers/$(nip)/profile/data).data.approved == true || isAdmin();
-      }
 
       // ===============================================================
       // Student-created / interacted collections (Open creation allowed)
       // ===============================================================
       match /akpd/{id} {
-        allow read: if isOwner(nip) && isApproved();
-        allow list: if isOwner(nip) && isApproved();
+        allow read: if isOwner(nip);
+        allow list: if isOwner(nip);
         allow create: if isValidId(id) && isSafeCreate(incoming());
-        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+        allow update, delete: if isOwner(nip) && isSafeUpdate();
       }
 
-      match /reports/{id} {
-        allow read, list: if isOwner(nip) && isApproved();
+      match /report_mutations/{id} {
+        allow read, list: if isOwner(nip);
         allow create: if isValidId(id) && isSafeCreate(incoming());
-        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+        allow update, delete: if isOwner(nip) && isSafeUpdate();
       }
 
       match /problem_reports/{id} {
-        allow read, list: if isOwner(nip) && isApproved();
+        allow read, list: if isOwner(nip);
         allow create: if isValidId(id) && isSafeCreate(incoming());
-        allow update, delete: if isOwner(nip) && isSafeUpdate() && isApproved();
+        allow update, delete: if isOwner(nip) && isSafeUpdate();
       }
 
       // ===============================================================
       // Strictly Teacher-Owned Collections
       // ===============================================================
       match /students/{id} {
-        allow read: if (isAuthenticated() || isOwner(nip)) && isApproved();
-        allow list: if isOwner(nip) && isApproved();
-        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming()) && isApproved();
-        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate() && isApproved();
-        allow delete: if isOwner(nip) && isValidId(id) && isApproved();
+        // We cannot use blanket reads if PII is stored. 
+        // We allow reading a specific student only if logged in and it's their ID (or teacher)
+        // Hmm, the current code allows students to find their names.
+        allow read: if isAuthenticated() || isOwner(nip);
+        allow list: if isOwner(nip); // Only owner lists all students
+        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming());
+        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate();
+        allow delete: if isOwner(nip) && isValidId(id);
       }
 
       match /logs/{id} {
-        allow read, list: if isOwner(nip) && isApproved();
-        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming()) && isApproved();
-        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate() && isApproved();
-        allow delete: if isOwner(nip) && isValidId(id) && isApproved();
+        allow read, list: if isOwner(nip);
+        allow create: if isOwner(nip) && isValidId(id) && isSafeCreate(incoming());
+        allow update: if isOwner(nip) && isValidId(id) && isSafeUpdate();
+        allow delete: if isOwner(nip) && isValidId(id);
       }
 
-      match /events/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /achievements/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /scholarships/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /economically_disadvantaged/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /violations/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /attendance/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /classical_schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /assessments/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /home_visits/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /vuln_maps/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /referrals/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /parent_comms/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /daily_journals/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /academic_events/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /notifications/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /groups/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /sociometry/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
-      match /tda/{id} { allow read, write: if isOwner(nip) && isValidId(id) && isApproved(); }
+      match /events/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /achievements/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /scholarships/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /economically_disadvantaged/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /violations/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /attendance/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /classical_schedules/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /assessments/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /home_visits/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /vuln_maps/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /referrals/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /parent_comms/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /daily_journals/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /academic_events/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /notifications/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /groups/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /sociometry/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
+      match /tda/{id} { allow read, write: if isOwner(nip) && isValidId(id); }
       
       match /{collection}/{documentId} {
-        allow read, write: if isOwner(nip) && isApproved();
+        allow read, write: if isOwner(nip);
       }
     }
 

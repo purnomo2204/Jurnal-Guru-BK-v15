@@ -883,27 +883,7 @@ const App: React.FC = () => {
     if (!auth) return;
     try {
       await signOut(auth);
-      
-      // Clear sensitive local data when logging out to prevent leaks to next user
-      localStorage.removeItem('guru_bk_students');
-      localStorage.removeItem('guru_bk_logs');
-      localStorage.removeItem('guru_bk_events');
-      localStorage.removeItem('guru_bk_achievements');
-      localStorage.removeItem('guru_bk_scholarships');
-      localStorage.removeItem('guru_bk_daily_journals');
-      localStorage.removeItem('guru_bk_violations');
-      localStorage.removeItem('guru_bk_attendance');
-      
-      setStudents([]);
-      setCounselingLogs([]);
-      setEventLogs([]);
-      setAchievements([]);
-      setScholarships([]);
-      setDailyJournals([]);
-      setViolations([]);
-      setAttendanceRecords([]);
-      
-      showNotification("Berhasil Logout & Data Lokal Direset", "success");
+      showNotification("Berhasil Logout", "success");
     } catch (err) {
       console.error("Logout Error:", err);
     }
@@ -1080,22 +1060,25 @@ const App: React.FC = () => {
     document.body.classList.remove('dark');
   }, [appearance]);
 
-  // (Teacher profile cloud sync logic has been moved to onUpdateTeacherData to prevent race condition overwrites)
-  
-  // Fetch teacher profile if teacher_id is in URL or currentUser logs in
+  // Sync teacher profile to cloud
+  useEffect(() => {
+    if (db && currentUser) {
+      const docRef = doc(db, "teachers", currentUser.uid, "profile", "data");
+      setDoc(docRef, { ...teacherData, lastSync: new Date().toISOString() }, { merge: true });
+    }
+  }, [teacherData, db, currentUser]);
+
+  // Fetch teacher profile if teacher_id is in URL
   useEffect(() => {
     const fetchTeacherProfile = async () => {
-      const targetId = urlTeacherId || currentUser?.uid;
-      if (db && targetId) {
+      if (db && urlTeacherId) {
         try {
-          const docRef = doc(db, "teachers", targetId, "profile", "data");
+          const docRef = doc(db, "teachers", urlTeacherId, "profile", "data");
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             const data = docSnap.data() as TeacherData;
             setTeacherData(prev => ({ ...prev, ...data }));
-            if (urlTeacherId) {
-              showNotification(`Profil Guru ${data.name || ''} berhasil dimuat`, "success");
-            }
+            showNotification(`Profil Guru ${data.name || ''} berhasil dimuat`, "success");
           }
         } catch (e) {
           console.error("Error fetching teacher profile:", e);
@@ -1103,7 +1086,7 @@ const App: React.FC = () => {
       }
     };
     fetchTeacherProfile();
-  }, [db, urlTeacherId, currentUser]);
+  }, [db, urlTeacherId]);
 
   const showNotification = (msg: string, type: 'success' | 'loading' | 'error' | 'info' = 'success') => {
     setNotification({ msg, type });
@@ -2350,28 +2333,20 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    // If we land on need assessment or AKPD
     if ((view === ViewMode.NEED_ASSESSMENT || view === ViewMode.STUDENT_AKPD) && isAuthReady) {
       if (db) {
         if (view === ViewMode.NEED_ASSESSMENT) {
           fetchFromFirebase('akpd');
+        }
+        if (students.length === 0) {
+          fetchFromFirebase('students');
         }
       }
       if (akpdSheetUrl && view === ViewMode.NEED_ASSESSMENT) {
         handleSyncAkpdFromCloud();
       }
     }
-    
-    // Lazy load students when needed if array is empty
-    const viewsNeedingStudents = [
-      ViewMode.HOME, ViewMode.STUDENT_LIST, ViewMode.STUDENT_INPUT, 
-      ViewMode.COUNSELING_INPUT, ViewMode.ANECDOTAL_RECORD_INPUT, 
-      ViewMode.STUDENT_PERSONAL_BOOK, ViewMode.STUDENT_360_PROFILE
-    ];
-    if (viewsNeedingStudents.includes(view) && isAuthReady && db && students.length === 0 && currentUser) {
-      fetchFromFirebase('students');
-    }
-  }, [view, db, akpdSheetUrl, isAuthReady, students.length, currentUser]);
+  }, [view, db, akpdSheetUrl, isAuthReady, students.length]);
 
   const handleCompleteSchedule = (id: string) => {
     setCounselingSchedules(prev => prev.map(s => s.id === id ? { ...s, status: 'completed' } : s));
@@ -3006,14 +2981,7 @@ const App: React.FC = () => {
           onSaveDocUrl={() => {}} 
           setView={setView} 
           teacherData={teacherData} 
-          onUpdateTeacherData={d => { 
-            setTeacherData(d); 
-            setAcademicYear(d.academicYear); 
-            localStorage.setItem('guru_bk_teacher_data', JSON.stringify(d)); 
-            if (db && currentUser) {
-              setDoc(doc(db, "teachers", currentUser.uid, "profile", "data"), { ...d, lastSync: new Date().toISOString() }, { merge: true }).catch(console.error);
-            }
-          }} 
+          onUpdateTeacherData={d => { setTeacherData(d); setAcademicYear(d.academicYear); localStorage.setItem('guru_bk_teacher_data', JSON.stringify(d)); }} 
           onExportBackup={handleExportBackup} 
           onImportBackup={handleImportBackup} 
           onManualSave={handleManualSave}
@@ -3031,11 +2999,6 @@ const App: React.FC = () => {
           isOffline={isOffline}
           db={db}
           auth={auth}
-          onLogout={() => {
-            handleLogout().then(() => {
-              setViewState(ViewMode.WELCOME);
-            });
-          }}
         />;
       case ViewMode.WORK_MECHANISM:
         return <WorkMechanism setView={setView} teacherData={teacherData} />;

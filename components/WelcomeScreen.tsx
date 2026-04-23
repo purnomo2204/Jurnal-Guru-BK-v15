@@ -1,86 +1,23 @@
 import React, { useState } from 'react';
-import { ArrowRight, HeartHandshake, Lock, Eye, EyeOff, AlertCircle, User, CheckCircle2, Sparkles, BarChart3, BookOpen, ShieldCheck, Mail, LogIn, UserPlus } from 'lucide-react';
+import { ArrowRight, HeartHandshake, Lock, Eye, EyeOff, AlertCircle, User, CheckCircle2, Sparkles, BarChart3, BookOpen, ShieldCheck, HelpCircle } from 'lucide-react';
 import { TeacherData } from '../types';
 import { formatAcademicTitle } from '../src/lib/nameFormatter';
 import { motion, AnimatePresence } from 'framer-motion';
-import { auth, db } from '../src/lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-
-type ViewState = 'intro' | 'login' | 'register' | 'offline';
 
 const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; onOpenGuide: () => void; }> = ({ onEnter, teacherData, onOpenGuide }) => {
-  const [viewState, setViewState] = useState<ViewState>('intro');
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [schoolName, setSchoolName] = useState('');
-  
   const [showPassword, setShowPassword] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(false);
+  const [showLogin, setShowLogin] = useState(false);
 
-  const handleOfflineLogin = (e?: React.FormEvent) => {
+  const handleLogin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (password === 'pedulisiswa' || password === teacherData?.accessPassword) {
+    if (password === 'pedulisiswa') {
       onEnter();
-      setErrorMsg('');
+      setError(false);
     } else {
-      setErrorMsg('Password Offline Salah!');
-      setTimeout(() => setErrorMsg(''), 3000);
-    }
-  };
-
-  const handleCloudAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!auth) {
-      setErrorMsg("Koneksi ke sistem cloud gagal. Coba Akses Offline.");
-      return;
-    }
-    
-    setIsLoading(true);
-    setErrorMsg('');
-    try {
-      if (viewState === 'register') {
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const newTeacherData = {
-          name: fullName,
-          school: schoolName,
-          nip: cred.user.uid,
-          accessPassword: password, // Store same password to unlock Settings
-          approved: false, // Default to unapproved
-          schoolAddress: '',
-          academicYear: '2023/2024',
-          city: '',
-          lastSync: new Date().toISOString()
-        };
-        await setDoc(doc(db, "teachers", cred.user.uid, "profile", "data"), newTeacherData);
-        onEnter();
-      } else {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        const docRef = doc(db, "teachers", cred.user.uid, "profile", "data");
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().approved !== true && cred.user.email !== "PURNOMOWIWIT@gmail.com") {
-          setErrorMsg("Akun sedang menunggu persetujuan admin.");
-          await auth.signOut();
-        } else {
-          onEnter();
-        }
-      }
-    } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/email-already-in-use') {
-        setErrorMsg('Email sudah terdaftar. Silakan login.');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        setErrorMsg('Email atau password salah.');
-      } else if (err.code === 'auth/weak-password') {
-        setErrorMsg('Password terlalu lemah (minimal 6 karakter).');
-      } else {
-        setErrorMsg('Gagal terhubung ke Cloud.');
-      }
-      setTimeout(() => setErrorMsg(''), 5000);
-    } finally {
-      setIsLoading(false);
+      setError(true);
+      setTimeout(() => setError(false), 3000);
     }
   };
 
@@ -161,55 +98,53 @@ const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; o
       </div>
 
       {/* Right Section: Login/Enter */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-6 bg-slate-50 relative">
+      <div className="w-full md:w-1/2 flex items-center justify-center p-6 bg-slate-50">
         <AnimatePresence mode="wait">
-          {viewState === 'intro' && (
+          {!showLogin ? (
             <motion.div 
               key="intro"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="text-center space-y-8 max-w-sm w-full"
+              className="text-center space-y-8 max-w-sm"
             >
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   <Sparkles className="w-3 h-3" />
-                  Sistem Multi-Pengguna Terintegrasi
+                  Selamat Datang Kembali
                 </div>
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">Siap Memulai Hari Ini?</h2>
-                <p className="text-sm text-slate-500">Masuk untuk mengelola data siswa Anda sendiri dengan aman.</p>
+                <p className="text-sm text-slate-500">Kelola administrasi BK Anda dengan lebih mudah dan menyenangkan.</p>
               </div>
 
-              <div className="space-y-3">
-                <button
-                  onClick={() => setViewState('login')}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 group"
-                >
-                  <LogIn className="w-5 h-5" />
-                  MASUK AKUN CLOUD
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform ml-1" />
-                </button>
-                
-                <button
-                  onClick={() => setViewState('register')}
-                  className="w-full bg-white hover:bg-blue-50 text-blue-600 border-2 border-blue-100 hover:border-blue-200 font-bold py-3.5 rounded-2xl transition-all flex items-center justify-center gap-2"
-                >
-                  <UserPlus className="w-5 h-5" />
-                  DAFTAR AKUN BARU
-                </button>
-
-                <div className="pt-4 border-t border-slate-200 mt-6 relative">
-                  <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-slate-50 px-3 text-[10px] font-bold text-slate-400">Atau</span>
-                  <button
-                    onClick={() => setViewState('offline')}
-                    className="w-full text-slate-500 hover:text-slate-800 font-bold py-3 rounded-2xl transition-all flex items-center justify-center gap-2 text-sm"
-                  >
-                    Buka Akses Offline (Lokal)
-                  </button>
+              <div className="p-6 bg-white rounded-3xl shadow-xl shadow-blue-900/5 border border-slate-100">
+                <div className="flex flex-col items-center mb-6">
+                  {teacherData?.photo ? (
+                    <img 
+                      src={teacherData.photo} 
+                      alt="Foto Guru" 
+                      className="w-32 h-32 object-cover rounded-full border-4 border-white shadow-lg mb-4"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-32 h-32 bg-blue-50 rounded-full border-4 border-white shadow-lg mb-4 flex items-center justify-center text-blue-400">
+                       <User className="w-16 h-16" />
+                    </div>
+                  )}
+                  <h3 className="text-lg font-bold text-slate-800">{formatAcademicTitle(teacherData?.name || 'Bapak/Ibu Guru BK')}</h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1 text-center">{teacherData?.school || 'Instansi Pendidikan'}</p>
                 </div>
+
+                <button
+                  onClick={() => setShowLogin(true)}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-2xl transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 group"
+                >
+                  MULAI SEKARANG
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
               </div>
 
-              <div className="flex flex-col items-center gap-2 pt-4">
+              <div className="flex flex-col items-center gap-2">
                 <img 
                   src="https://lh3.googleusercontent.com/d/1UNix_IGpjmt2q0apsIQy-6s3Zr9SnLJ9" 
                   alt="Logo" 
@@ -221,130 +156,16 @@ const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; o
                 </p>
               </div>
             </motion.div>
-          )}
-          {(viewState === 'login' || viewState === 'register') && (
+          ) : (
             <motion.div 
-              key="cloud_auth"
+              key="login"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               className="w-full max-w-sm bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-slate-100"
             >
               <button 
-                onClick={() => setViewState('intro')}
-                className="text-[10px] font-bold text-slate-400 hover:text-blue-600 mb-6 flex items-center gap-1 transition-colors"
-              >
-                <ChevronLeft className="w-3 h-3" /> KEMBALI
-              </button>
-
-              <div className="mb-8">
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight">{viewState === 'register' ? 'Daftar Akun Baru' : 'Masuk ke Cloud'}</h2>
-                <p className="text-xs text-slate-500 mt-1">{viewState === 'register' ? 'Buat profil akun untuk mengelola data siswa pribadi.' : 'Masukkan email dan password untuk melanjutkan.'}</p>
-              </div>
-
-              <form onSubmit={handleCloudAuth} className="space-y-4">
-                {viewState === 'register' && (
-                  <>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
-                      <div className="relative">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input
-                          type="text"
-                          required
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                          placeholder="Dr. Budi Santoso, M.Pd"
-                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Instansi / Sekolah</label>
-                      <div className="relative">
-                        <BookOpen className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                        <input
-                          type="text"
-                          required
-                          value={schoolName}
-                          onChange={(e) => setSchoolName(e.target.value)}
-                          placeholder="SMP Negeri 1 Contoh"
-                          className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-                
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="email@sekolah.sch.id"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl pl-11 pr-4 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password {viewState === 'register' ? 'Sistem' : ''}</label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full bg-slate-50 border-2 border-slate-100 focus:border-blue-500 rounded-2xl pl-11 pr-12 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-600 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
-
-                {errorMsg && (
-                  <motion.div 
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="flex items-center gap-2 text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100"
-                  >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-[10px] font-bold tracking-wider leading-tight">{errorMsg}</span>
-                  </motion.div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white font-bold py-3 mt-2 rounded-2xl transition-all shadow-xl shadow-blue-600/20 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2"
-                >
-                  {isLoading ? 'MEMPROSES...' : viewState === 'register' ? 'DAFTAR SEKARANG' : 'MASUK SEKARANG'}
-                </button>
-              </form>
-            </motion.div>
-          )}
-
-          {viewState === 'offline' && (
-            <motion.div 
-              key="offline_auth"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="w-full max-w-sm bg-white p-8 rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-slate-100"
-            >
-              <button 
-                onClick={() => setViewState('intro')}
+                onClick={() => setShowLogin(false)}
                 className="text-[10px] font-bold text-slate-400 hover:text-blue-600 mb-6 flex items-center gap-1 transition-colors"
               >
                 <ChevronLeft className="w-3 h-3" /> KEMBALI
@@ -352,12 +173,12 @@ const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; o
 
               <div className="mb-8">
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight">Verifikasi Akses</h2>
-                <p className="text-xs text-slate-500 mt-1">Masukkan password lokal untuk melanjutkan ke sistem secara offline.</p>
+                <p className="text-xs text-slate-500 mt-1">Masukkan password untuk melanjutkan ke dashboard.</p>
               </div>
 
-              <form onSubmit={handleOfflineLogin} className="space-y-4">
+              <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password Offline</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Password Sistem</label>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300" />
                     <input
@@ -365,7 +186,7 @@ const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; o
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className={`w-full bg-slate-50 border-2 ${errorMsg ? 'border-rose-400' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-11 pr-12 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner`}
+                      className={`w-full bg-slate-50 border-2 ${error ? 'border-rose-400' : 'border-slate-100 focus:border-blue-500'} rounded-2xl pl-11 pr-12 py-3 text-sm font-bold text-slate-800 outline-none transition-all shadow-inner`}
                       autoFocus
                     />
                     <button
@@ -378,24 +199,28 @@ const WelcomeScreen: React.FC<{ onEnter: () => void; teacherData: TeacherData; o
                   </div>
                 </div>
 
-                {errorMsg && (
+                {error && (
                   <motion.div 
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     className="flex items-center gap-2 text-rose-500 bg-rose-50 p-3 rounded-xl border border-rose-100"
                   >
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-[10px] font-bold tracking-wider leading-tight">{errorMsg}</span>
+                    <AlertCircle className="w-4 h-4" />
+                    <span className="text-[10px] font-bold uppercase tracking-wider">Password Salah!</span>
                   </motion.div>
                 )}
 
                 <button
                   type="submit"
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 mt-2 rounded-2xl transition-all shadow-xl shadow-slate-900/20 hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-2xl transition-all shadow-xl shadow-slate-900/20 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  AKSES LOKAL
+                  KONFIRMASI & MASUK
                 </button>
               </form>
+
+              <div className="mt-8 text-center">
+                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-[0.2em]">Versi Pro 1.0</p>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

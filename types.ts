@@ -48,7 +48,6 @@ export interface TeacherData {
   photo?: string;
   logoGov?: string;
   logoSchool?: string;
-  approved?: boolean;
   govOrFoundation?: string;
   deptOrFoundation?: string;
   city?: string;
